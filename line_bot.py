@@ -13,8 +13,9 @@ from linebot.v3.messaging import (
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
 
-from ai_analyzer import AIAnalyzer
+from google_calendar import GoogleCalendarClient
 from message_formatter import (
+    format_calendar_events,
     format_task_completed,
     format_task_deleted,
     format_task_list,
@@ -33,10 +34,12 @@ class LineBot:
         user_id: str,
         task_store: TaskStore,
         ai_analyzer: AIAnalyzer,
+        calendar_client: GoogleCalendarClient = None,
     ):
         self.user_id = user_id
         self.task_store = task_store
         self.ai_analyzer = ai_analyzer
+        self.calendar_client = calendar_client
 
         # Webhook Handler
         self.handler = WebhookHandler(channel_secret)
@@ -61,6 +64,8 @@ class LineBot:
             # コマンド判定
             if text in ("タスク一覧", "タスク", "一覧", "リスト"):
                 response = self._handle_task_list()
+            elif text in ("カレンダー", "今日の予定", "予定"):
+                response = self._handle_calendar()
             elif re.match(r"^(完了|done)\s*(\d+)$", text, re.IGNORECASE):
                 match = re.match(
                     r"^(完了|done)\s*(\d+)$", text, re.IGNORECASE
@@ -116,6 +121,18 @@ class LineBot:
             return format_task_deleted(title)
         return "⚠️ タスクの削除に失敗しました。"
 
+    def _handle_calendar(self) -> str:
+        """カレンダー予定表示コマンド"""
+        if not self.calendar_client:
+            return "⚠️ カレンダー連携が設定されていません。"
+
+        try:
+            events = self.calendar_client.get_today_events()
+            return format_calendar_events(events)
+        except Exception as e:
+            print(f"⚠️ カレンダー取得エラー: {e}")
+            return "⚠️ カレンダー予定の取得に失敗しました。"
+
     def _handle_help(self) -> str:
         """ヘルプコマンド"""
         return (
@@ -126,18 +143,17 @@ class LineBot:
             "  AIが内容を理解してリマインドしてくれます\n"
             "\n"
             "📋 タスク一覧:\n"
-            "  「タスク一覧」と送信\n"
+            "  「リスト」と送信\n"
+            "\n"
+            "📅 カレンダー予定:\n"
+            "  「カレンダー」と送信\n"
+            "  Googleカレンダーの今日の予定を表示します\n"
             "\n"
             "✅ タスク完了:\n"
             "  「完了 番号」と送信\n"
-            "  例: 完了 1\n"
             "\n"
             "🗑️ タスク削除:\n"
-            "  「削除 番号」と送信\n"
-            "  例: 削除 2\n"
-            "\n"
-            "📅 カレンダー予定:\n"
-            "  毎朝自動で通知します"
+            "  「削除 番号」と送信"
         )
 
     def _handle_ai_task(self, message: str) -> str:

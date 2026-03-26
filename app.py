@@ -13,6 +13,7 @@ from flask import Flask, abort, request
 
 from ai_analyzer import AIAnalyzer
 from config import Config
+from google_calendar import GoogleCalendarClient
 from line_bot import LineBot
 from scheduler import TaskScheduler
 from task_store import TaskStore
@@ -28,12 +29,17 @@ task_store = TaskStore(db_path=Config.DB_PATH)
 ai_analyzer = AIAnalyzer(
     api_key=Config.GEMINI_API_KEY, model=Config.GEMINI_MODEL
 )
+calendar_client = GoogleCalendarClient(
+    credentials_path=Config.GOOGLE_CREDENTIALS_PATH,
+    token_path=Config.GOOGLE_TOKEN_PATH,
+)
 line_bot = LineBot(
     channel_secret=Config.LINE_CHANNEL_SECRET,
     channel_access_token=Config.LINE_CHANNEL_ACCESS_TOKEN,
     user_id=Config.LINE_USER_ID,
     task_store=task_store,
     ai_analyzer=ai_analyzer,
+    calendar_client=calendar_client,
 )
 
 # スケジューラー
