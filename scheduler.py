@@ -26,6 +26,14 @@ class TaskScheduler:
             id="check_reminders",
         )
 
+        # Renderのスリープ回避（14分毎）
+        self.scheduler.add_job(
+            self._keep_alive_ping,
+            "interval",
+            minutes=14,
+            id="keep_alive_ping",
+        )
+
         # 朝の予定通知
         self.scheduler.add_job(
             self._morning_notification,
@@ -88,3 +96,19 @@ class TaskScheduler:
 
         except Exception as e:
             print(f"❌ 朝の通知エラー: {e}")
+
+    def _keep_alive_ping(self):
+        """Renderの無料枠スリープを回避するための自己Ping送信"""
+        import os
+        import requests
+        
+        # Render環境にある場合は自動設定される環境変数からURLを取得
+        external_url = os.environ.get('RENDER_EXTERNAL_URL')
+        if external_url:
+            health_url = f"{external_url}/health"
+            try:
+                # 自身に対してHTTPリクエストを送信して起こしておく
+                response = requests.get(health_url, timeout=10)
+                print(f"💓 スリープ回避Ping成功: {health_url} (HTTP {response.status_code})")
+            except Exception as e:
+                print(f"⚠️ スリープ回避Pingエラー: {e}")
