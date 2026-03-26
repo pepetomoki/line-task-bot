@@ -9,7 +9,7 @@ import google.generativeai as genai
 class AIAnalyzer:
     """Google Gemini APIを使ったタスク解析"""
 
-    def __init__(self, api_key: str, model: str = "gemini-2.0-flash"):
+    def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model)
 

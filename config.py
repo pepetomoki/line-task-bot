@@ -17,8 +17,8 @@ class Config:
     LINE_USER_ID = os.getenv("LINE_USER_ID", "")
 
     # Google Gemini API
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+    GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
     # Google Calendar
     GOOGLE_CREDENTIALS_PATH = os.getenv(
